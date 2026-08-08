@@ -1,0 +1,43 @@
+# Node.js & Dependencies
+node_modules/
+**/node_modules/
+.npm/
+package-lock.json.log
+
+# Production / Frontend Build Output
+dist/
+**/dist/
+dist-ssr/
+build/
+
+# Python & Virtual Environments
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+ENV/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor Directories
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*.suo
+
+# Local Logs & Archives
+*.log
+syncpad.zip
