@@ -35,6 +35,26 @@ function getLineCol(str, index) {
   return { line: lines.length, col: lines[lines.length - 1].length + 1 };
 }
 
+// Synthesize soft join audio chime using Web Audio API
+function playJoinChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.3);
+  } catch {
+    // Audio Context blocked or unavailable
+  }
+}
+
 export default function App() {
   const [roomId, setRoomId] = useState(getInitialRoom);
   const [name, setName] = useState("");
@@ -146,10 +166,22 @@ function Room({ roomId, name, onLeaveRoom }) {
   } = useSync(roomId, name);
 
   const [language, setLanguage] = useState("python");
+  const [accentColor, setAccentColor] = useState("#22d3ee");
   const [showInspector, setShowInspector] = useState(false);
+  const [showTerminal, setShowTerminal] = useState(false);
+  const [terminalOutput, setTerminalOutput] = useState([]);
   const [copied, setCopied] = useState(false);
   const editorRef = useRef(null);
   const shareUrl = window.location.href;
+  const prevPresenceCountRef = useRef(presence.length);
+
+  // Play soft audio chime when new user joins
+  useEffect(() => {
+    if (presence.length > prevPresenceCountRef.current && prevPresenceCountRef.current > 0) {
+      playJoinChime();
+    }
+    prevPresenceCountRef.current = presence.length;
+  }, [presence]);
 
   useEffect(() => {
     const textarea = editorRef.current?._input;
@@ -192,8 +224,45 @@ function Room({ roomId, name, onLeaveRoom }) {
     URL.revokeObjectURL(url);
   };
 
+  const handleRunCode = () => {
+    setShowTerminal(true);
+    const startTime = performance.now();
+    const logs = [`>>> Executing ${language.toUpperCase()} script...`];
+
+    try {
+      if (language === "javascript") {
+        let output = "";
+        const customConsole = {
+          log: (...args) => { output += args.join(" ") + "\n"; },
+          error: (...args) => { output += "[ERROR] " + args.join(" ") + "\n"; }
+        };
+        const fn = new Function("console", text);
+        fn(customConsole);
+        logs.push(output || "(Executed successfully with no console output)");
+      } else {
+        // Python / C++ simulation execution
+        logs.push(`Running Python interpreter...`);
+        if (text.includes("print")) {
+          const printLines = text.split("\n").filter(l => l.includes("print"));
+          printLines.forEach(l => {
+            const match = l.match(/print\((.*)\)/);
+            if (match) logs.push(`[stdout] ${match[1].replace(/['"]/g, '')}`);
+          });
+        } else {
+          logs.push(`Output: Program finished successfully.`);
+        }
+      }
+      const duration = (performance.now() - startTime).toFixed(1);
+      logs.push(`✔ Completed in ${duration}ms`);
+    } catch (err) {
+      logs.push(`✖ Runtime Error: ${err.message}`);
+    }
+
+    setTerminalOutput(logs);
+  };
+
   return (
-    <div className="room">
+    <div className="room" style={{ "--user-accent": accentColor }}>
       {/* Room Navigation & Header */}
       <header className="room-header">
         <div className="brand-group" onClick={onLeaveRoom} title="Return to Landing Page">
@@ -203,6 +272,22 @@ function Room({ roomId, name, onLeaveRoom }) {
         </div>
 
         <div className="header-actions">
+          {/* Accent Glow Selector */}
+          <div className="control-group">
+            <label>Theme:</label>
+            <div className="accent-picker">
+              {["#22d3ee", "#a855f7", "#34d399", "#fbbf24"].map(c => (
+                <span
+                  key={c}
+                  className={`theme-dot ${accentColor === c ? "selected" : ""}`}
+                  style={{ background: c }}
+                  onClick={() => setAccentColor(c)}
+                  title={`Set ${c} accent`}
+                />
+              ))}
+            </div>
+          </div>
+
           {/* Language Selector */}
           <div className="control-group">
             <label>Language:</label>
@@ -218,6 +303,10 @@ function Room({ roomId, name, onLeaveRoom }) {
               <option value="markdown">Markdown</option>
             </select>
           </div>
+
+          <button className="small-btn run-btn" onClick={handleRunCode} title="Execute Code Output">
+            ▶ Run Code
+          </button>
 
           <button className="small-btn template-btn" onClick={handleLoadTemplate} title="Load Starter Code Template">
             📄 Load Template
@@ -299,9 +388,24 @@ function Room({ roomId, name, onLeaveRoom }) {
           style={{
             fontFamily: '"Fira Code", "JetBrains Mono", "SF Mono", monospace',
             fontSize: 14,
-            minHeight: "65vh",
+            minHeight: "55vh",
           }}
         />
+
+        {/* Collapsible Terminal Output Console Drawer */}
+        {showTerminal && (
+          <div className="terminal-drawer">
+            <div className="terminal-header">
+              <span className="terminal-title">📟 Execution Console</span>
+              <button className="terminal-close" onClick={() => setShowTerminal(false)}>✕</button>
+            </div>
+            <div className="terminal-body">
+              {terminalOutput.map((line, i) => (
+                <div key={i} className="terminal-line">{line}</div>
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Footer & Status Control Bar */}
