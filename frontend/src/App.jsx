@@ -179,6 +179,7 @@ function Room({ roomId, name, onLeaveRoom }) {
   const [expandedTerminal, setExpandedTerminal] = useState(false);
   const [previewHtml, setPreviewHtml] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const editorRef = useRef(null);
   const shareUrl = window.location.href;
   const prevPresenceCountRef = useRef(presence.length);
@@ -272,7 +273,16 @@ function Room({ roomId, name, onLeaveRoom }) {
           <span className="room-pill">Room: {roomId}</span>
         </div>
 
-        <div className="header-actions">
+        {/* Mobile Options Toggle Button */}
+        <button
+          className="mobile-menu-toggle-btn"
+          onClick={() => setShowMobileMenu(!showMobileMenu)}
+          aria-label="Toggle mobile menu"
+        >
+          {showMobileMenu ? "✕ Close" : "⚙️ Controls"}
+        </button>
+
+        <div className={`header-actions ${showMobileMenu ? "mobile-open" : ""}`}>
           {/* Accent Glow Selector */}
           <div className="control-group">
             <label>Theme:</label>
@@ -306,18 +316,18 @@ function Room({ roomId, name, onLeaveRoom }) {
             </select>
           </div>
 
-          <button className="small-btn run-btn" onClick={handleRunCode} title="Execute Code Output">
+          <button className="small-btn run-btn" onClick={() => { handleRunCode(); setShowMobileMenu(false); }} title="Execute Code Output">
             ▶ Run Code
           </button>
 
-          <button className="small-btn template-btn" onClick={handleLoadTemplate} title="Load Starter Code Template">
+          <button className="small-btn template-btn" onClick={() => { handleLoadTemplate(); setShowMobileMenu(false); }} title="Load Starter Code Template">
             📄 Load Template
           </button>
 
           {/* CRDT Inspector Toggle */}
           <button
             className={`small-btn inspector-toggle-btn ${showInspector ? "active" : ""}`}
-            onClick={() => setShowInspector(!showInspector)}
+            onClick={() => { setShowInspector(!showInspector); setShowMobileMenu(false); }}
           >
             🔬 Inspect CRDT Engine
           </button>
@@ -330,6 +340,22 @@ function Room({ roomId, name, onLeaveRoom }) {
           </div>
         </div>
       </header>
+
+      {/* Floating / Sticky Mobile Action Quick Toolbar (visible on phone screens) */}
+      <div className="mobile-quick-toolbar">
+        <button className="mobile-quick-btn run-quick-btn" onClick={handleRunCode}>
+          ▶ Run
+        </button>
+        <button className="mobile-quick-btn" onClick={handleLoadTemplate}>
+          📄 Template
+        </button>
+        <button className="mobile-quick-btn" onClick={() => setShowInspector(!showInspector)}>
+          🔬 Inspector
+        </button>
+        <button className="mobile-quick-btn share-quick-btn" onClick={handleCopyLink}>
+          {copied ? "✓ Copied" : "🔗 Share"}
+        </button>
+      </div>
 
       {/* Live Presence & Remote User Bar */}
       <div className="presence-bar">

@@ -63,6 +63,7 @@ export function LandingDemo({ onCreateRoom, onJoinRoom }) {
   const [opCount, setOpCount] = useState(0);
   const [opTickerLogs, setOpTickerLogs] = useState([]);
   const [customInput, setCustomInput] = useState("");
+  const [activeMobileSimTab, setActiveMobileSimTab] = useState("all");
 
   const doc1Ref = useRef(new RGADocument());
   const doc2Ref = useRef(new RGADocument());
@@ -189,7 +190,7 @@ export function LandingDemo({ onCreateRoom, onJoinRoom }) {
         <div className="simulator-header">
           <div className="sim-title">
             <span className="live-pill">LIVE CRDT SIMULATOR</span>
-            <span>Concurrent Typing Merging in Real-Time</span>
+            <span className="sim-sub-text">Concurrent Typing Merging in Real-Time</span>
           </div>
 
           <div className="sim-toolbar-controls">
@@ -225,54 +226,88 @@ export function LandingDemo({ onCreateRoom, onJoinRoom }) {
           </div>
         </div>
 
-        <div className="simulator-grid">
+        {/* Mobile View Switcher Tabs */}
+        <div className="mobile-sim-tabs">
+          <button
+            className={`mobile-tab-btn ${activeMobileSimTab === "all" ? "active" : ""}`}
+            onClick={() => setActiveMobileSimTab("all")}
+          >
+            📱 All Views
+          </button>
+          <button
+            className={`mobile-tab-btn ${activeMobileSimTab === "alice" ? "active" : ""}`}
+            onClick={() => setActiveMobileSimTab("alice")}
+          >
+            🟡 Alice
+          </button>
+          <button
+            className={`mobile-tab-btn ${activeMobileSimTab === "bob" ? "active" : ""}`}
+            onClick={() => setActiveMobileSimTab("bob")}
+          >
+            🔵 Bob
+          </button>
+          <button
+            className={`mobile-tab-btn ${activeMobileSimTab === "merged" ? "active" : ""}`}
+            onClick={() => setActiveMobileSimTab("merged")}
+          >
+            ✨ Merged
+          </button>
+        </div>
+
+        <div className={`simulator-grid mobile-tab-${activeMobileSimTab}`}>
           {/* Alice's Pane */}
-          <div className="sim-pane alice-pane">
-            <div className="pane-header">
-              <span className="user-dot alice-dot" />
-              <span className="user-name">Alice (Client A)</span>
-              <span className="site-tag">site_id: s1</span>
+          {(activeMobileSimTab === "all" || activeMobileSimTab === "alice") && (
+            <div className="sim-pane alice-pane">
+              <div className="pane-header">
+                <span className="user-dot alice-dot" />
+                <span className="user-name">Alice (Client A)</span>
+                <span className="site-tag">site_id: s1</span>
+              </div>
+              <div className="sim-editor-content">
+                <code>{aliceText}</code>
+                <span className="sim-caret alice-caret" />
+              </div>
+              <div className="custom-inject-box">
+                <input
+                  type="text"
+                  placeholder="Type custom text..."
+                  value={customInput}
+                  onChange={(e) => setCustomInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleInjectCustomText()}
+                />
+                <button onClick={handleInjectCustomText}>Inject</button>
+              </div>
             </div>
-            <div className="sim-editor-content">
-              <code>{aliceText}</code>
-              <span className="sim-caret alice-caret" />
-            </div>
-            <div className="custom-inject-box">
-              <input
-                type="text"
-                placeholder="Type custom text to inject..."
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleInjectCustomText()}
-              />
-              <button onClick={handleInjectCustomText}>Inject</button>
-            </div>
-          </div>
+          )}
 
           {/* Bob's Pane */}
-          <div className="sim-pane bob-pane">
-            <div className="pane-header">
-              <span className="user-dot bob-dot" />
-              <span className="user-name">Bob (Client B)</span>
-              <span className="site-tag">site_id: s2</span>
+          {(activeMobileSimTab === "all" || activeMobileSimTab === "bob") && (
+            <div className="sim-pane bob-pane">
+              <div className="pane-header">
+                <span className="user-dot bob-dot" />
+                <span className="user-name">Bob (Client B)</span>
+                <span className="site-tag">site_id: s2</span>
+              </div>
+              <div className="sim-editor-content">
+                <code>{bobText}</code>
+                <span className="sim-caret bob-caret" />
+              </div>
             </div>
-            <div className="sim-editor-content">
-              <code>{bobText}</code>
-              <span className="sim-caret bob-caret" />
-            </div>
-          </div>
+          )}
 
           {/* Merged Convergent Document Mirror */}
-          <div className="sim-pane merged-pane">
-            <div className="pane-header">
-              <span className="sparkle-icon">✨</span>
-              <span className="user-name">Convergent Document Mirror</span>
-              <span className="crdt-tag">Strong Eventual Consistency</span>
+          {(activeMobileSimTab === "all" || activeMobileSimTab === "merged") && (
+            <div className="sim-pane merged-pane">
+              <div className="pane-header">
+                <span className="sparkle-icon">✨</span>
+                <span className="user-name">Convergent Document Mirror</span>
+                <span className="crdt-tag">Eventual Consistency</span>
+              </div>
+              <div className="sim-editor-content">
+                <code className="highlight-code">{mergedText || "// Watching live convergence..."}</code>
+              </div>
             </div>
-            <div className="sim-editor-content">
-              <code className="highlight-code">{mergedText || "// Watching live convergence..."}</code>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Live WebSocket Operation Stream Ticker Bar */}

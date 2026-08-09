@@ -20,6 +20,13 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 body {
@@ -27,17 +34,25 @@ body {
   color: var(--text-main);
   font-family: var(--font-sans);
   min-height: 100vh;
-  overflow-x: hidden;
+  min-height: -webkit-fill-available;
   line-height: 1.5;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background-image: 
     radial-gradient(at 0% 0%, rgba(34, 211, 238, 0.08) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.08) 0px, transparent 50%);
 }
 
+/* Prevent auto-zooming on iOS devices when focusing inputs */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
   background: rgba(15, 23, 42, 0.6);

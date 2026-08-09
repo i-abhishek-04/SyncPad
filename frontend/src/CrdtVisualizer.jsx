@@ -11,7 +11,7 @@ export function CrdtVisualizer({ nodes, presence, opsMerged, onClose }) {
   const tombstoneCount = totalNodes - activeNodes;
 
   return (
-    <div className="crdt-inspector-overlay">
+    <div className="crdt-inspector-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="crdt-inspector-modal">
         <header className="inspector-header">
           <div className="inspector-title">
