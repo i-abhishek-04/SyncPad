@@ -6,6 +6,7 @@ import "prismjs/components/prism-javascript";
 import "prismjs/components/prism-clike";
 import "prismjs/components/prism-c";
 import "prismjs/components/prism-cpp";
+import "prismjs/components/prism-java";
 import "prismjs/components/prism-css";
 import "prismjs/components/prism-markup";
 import "prismjs/components/prism-markdown";
@@ -15,6 +16,7 @@ import { useSync } from "./useSync";
 import { LandingDemo } from "./LandingDemo";
 import { CrdtVisualizer } from "./CrdtVisualizer";
 import { CODE_TEMPLATES } from "./templates";
+import { executeCode } from "./executionEngine";
 import "./App.css";
 
 const Editor = typeof EditorComponent === "function" ? EditorComponent : (EditorComponent?.default || EditorComponent);
@@ -169,7 +171,13 @@ function Room({ roomId, name, onLeaveRoom }) {
   const [accentColor, setAccentColor] = useState("#22d3ee");
   const [showInspector, setShowInspector] = useState(false);
   const [showTerminal, setShowTerminal] = useState(false);
-  const [terminalOutput, setTerminalOutput] = useState([]);
+  const [terminalLogs, setTerminalLogs] = useState([]);
+  const [exitCode, setExitCode] = useState(null);
+  const [execDuration, setExecDuration] = useState(null);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [errorFilter, setErrorFilter] = useState(false);
+  const [expandedTerminal, setExpandedTerminal] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState(null);
   const [copied, setCopied] = useState(false);
   const editorRef = useRef(null);
   const shareUrl = window.location.href;
@@ -195,6 +203,7 @@ function Room({ roomId, name, onLeaveRoom }) {
     return (code) => {
       let langObj = languages.python;
       if (language === "javascript") langObj = languages.javascript;
+      if (language === "java") langObj = languages.java;
       if (language === "cpp") langObj = languages.cpp;
       if (language === "markup") langObj = languages.markup;
       if (language === "markdown") langObj = languages.markdown;
@@ -214,7 +223,7 @@ function Room({ roomId, name, onLeaveRoom }) {
   };
 
   const handleDownloadCode = () => {
-    const extMap = { python: "py", javascript: "js", cpp: "cpp", markup: "html", markdown: "md" };
+    const extMap = { python: "py", javascript: "js", java: "java", cpp: "cpp", markup: "html", markdown: "md" };
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -224,41 +233,33 @@ function Room({ roomId, name, onLeaveRoom }) {
     URL.revokeObjectURL(url);
   };
 
-  const handleRunCode = () => {
+  const handleRunCode = async () => {
     setShowTerminal(true);
-    const startTime = performance.now();
-    const logs = [`>>> Executing ${language.toUpperCase()} script...`];
+    setIsExecuting(true);
+    setPreviewHtml(null);
+    setTerminalLogs([]);
 
-    try {
-      if (language === "javascript") {
-        let output = "";
-        const customConsole = {
-          log: (...args) => { output += args.join(" ") + "\n"; },
-          error: (...args) => { output += "[ERROR] " + args.join(" ") + "\n"; }
-        };
-        const fn = new Function("console", text);
-        fn(customConsole);
-        logs.push(output || "(Executed successfully with no console output)");
-      } else {
-        // Python / C++ simulation execution
-        logs.push(`Running Python interpreter...`);
-        if (text.includes("print")) {
-          const printLines = text.split("\n").filter(l => l.includes("print"));
-          printLines.forEach(l => {
-            const match = l.match(/print\((.*)\)/);
-            if (match) logs.push(`[stdout] ${match[1].replace(/['"]/g, '')}`);
-          });
-        } else {
-          logs.push(`Output: Program finished successfully.`);
-        }
-      }
-      const duration = (performance.now() - startTime).toFixed(1);
-      logs.push(`✔ Completed in ${duration}ms`);
-    } catch (err) {
-      logs.push(`✖ Runtime Error: ${err.message}`);
-    }
+    const res = await executeCode(language, text, (msg) => {
+      setTerminalLogs((prev) => [...prev, { text: msg, type: "sys" }]);
+    });
 
-    setTerminalOutput(logs);
+    setTerminalLogs(res.logs);
+    setExitCode(res.exitCode);
+    setExecDuration(res.duration);
+    if (res.previewHtml) setPreviewHtml(res.previewHtml);
+    setIsExecuting(false);
+  };
+
+  const handleClearTerminal = () => {
+    setTerminalLogs([]);
+    setExitCode(null);
+    setExecDuration(null);
+    setPreviewHtml(null);
+  };
+
+  const handleCopyTerminal = () => {
+    const textContent = terminalLogs.map((l) => l.text).join("\n");
+    navigator.clipboard.writeText(textContent);
   };
 
   return (
@@ -298,6 +299,7 @@ function Room({ roomId, name, onLeaveRoom }) {
             >
               <option value="python">Python</option>
               <option value="javascript">JavaScript</option>
+              <option value="java">Java</option>
               <option value="cpp">C++</option>
               <option value="markup">HTML</option>
               <option value="markdown">Markdown</option>
@@ -392,17 +394,71 @@ function Room({ roomId, name, onLeaveRoom }) {
           }}
         />
 
-        {/* Collapsible Terminal Output Console Drawer */}
+        {/* Collapsible Interactive Terminal Output Console Drawer */}
         {showTerminal && (
-          <div className="terminal-drawer">
+          <div className={`terminal-drawer ${expandedTerminal ? "expanded" : ""}`}>
             <div className="terminal-header">
-              <span className="terminal-title">📟 Execution Console</span>
-              <button className="terminal-close" onClick={() => setShowTerminal(false)}>✕</button>
+              <div className="terminal-title-group">
+                <span className="terminal-title">📟 Execution Console</span>
+                {isExecuting && <span className="exec-badge executing">⚡ Running...</span>}
+                {!isExecuting && exitCode !== null && (
+                  <span className={`exec-badge ${exitCode === 0 ? "success" : "error"}`}>
+                    {exitCode === 0 ? "✔ Exit code: 0" : "✖ Exit code: 1"}
+                  </span>
+                )}
+                {execDuration && <span className="exec-time-pill">⚡ {execDuration}ms</span>}
+              </div>
+
+              <div className="terminal-controls">
+                <button
+                  className={`term-btn ${errorFilter ? "active" : ""}`}
+                  onClick={() => setErrorFilter(!errorFilter)}
+                  title="Filter Errors Only"
+                >
+                  ⚠️ Errors Only
+                </button>
+                <button className="term-btn" onClick={handleCopyTerminal} title="Copy Output">
+                  📋 Copy
+                </button>
+                <button className="term-btn" onClick={handleClearTerminal} title="Clear Terminal">
+                  🗑️ Clear
+                </button>
+                <button
+                  className="term-btn"
+                  onClick={() => setExpandedTerminal(!expandedTerminal)}
+                  title="Toggle Height"
+                >
+                  {expandedTerminal ? "🗜 Collapse" : "↕ Expand"}
+                </button>
+                <button className="terminal-close" onClick={() => setShowTerminal(false)}>✕</button>
+              </div>
             </div>
+
             <div className="terminal-body">
-              {terminalOutput.map((line, i) => (
-                <div key={i} className="terminal-line">{line}</div>
-              ))}
+              {terminalLogs.length === 0 && !isExecuting && (
+                <div className="terminal-empty">No output generated yet. Click ▶ Run Code to execute script.</div>
+              )}
+              {terminalLogs
+                .filter((l) => (errorFilter ? l.type === "stderr" : true))
+                .map((log, i) => (
+                  <div key={i} className={`terminal-line ${log.type}`}>
+                    {log.type === "stderr" && <span className="line-prefix error">✖</span>}
+                    {log.type === "stdout" && <span className="line-prefix stdout">›</span>}
+                    {log.type === "sys" && <span className="line-prefix sys">⚙</span>}
+                    {log.type === "warn" && <span className="line-prefix warn">⚠</span>}
+                    <span className="line-text">{log.text}</span>
+                  </div>
+                ))}
+              {previewHtml && (
+                <div className="terminal-html-preview">
+                  <div className="preview-label">Live HTML Document Frame:</div>
+                  <iframe
+                    title="HTML Output Preview"
+                    srcDoc={previewHtml}
+                    className="preview-iframe"
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}

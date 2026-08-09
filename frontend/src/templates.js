@@ -78,4 +78,19 @@ int main() {
 - [ ] Implement Two Sum solution
 - [ ] Review performance & time complexity
 `,
+  java: `// SyncPad Collaborative Java Scratchpad
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello, SyncPad Java Environment!");
+        
+        int[] numbers = {10, 20, 30, 40, 50};
+        int sum = 0;
+        for (int num : numbers) {
+            sum += num;
+        }
+        System.out.println("Sum of elements: " + sum);
+    }
+}
+`,
 };

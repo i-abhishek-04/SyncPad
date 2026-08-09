@@ -1047,3 +1047,195 @@
   padding: 24px;
   text-align: center;
 }
+
+/* ==========================================================================
+   6. IDE EXECUTION TERMINAL DRAWER
+   ========================================================================== */
+.terminal-drawer {
+  background: rgba(9, 13, 22, 0.95);
+  border-top: 1px solid var(--bg-card-border);
+  display: flex;
+  flex-direction: column;
+  height: 240px;
+  transition: height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+  font-family: "Fira Code", "JetBrains Mono", monospace;
+  position: relative;
+  z-index: 50;
+}
+
+.terminal-drawer.expanded {
+  height: 480px;
+}
+
+.terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 18px;
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  user-select: none;
+}
+
+.terminal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.terminal-title {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-main);
+}
+
+.exec-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.exec-badge.executing {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--accent-amber);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  animation: pulse 1.5s infinite;
+}
+
+.exec-badge.success {
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--accent-emerald);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.exec-badge.error {
+  background: rgba(244, 63, 94, 0.15);
+  color: var(--accent-rose);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+}
+
+.exec-time-pill {
+  font-size: 0.72rem;
+  color: var(--accent-cyan);
+  background: rgba(34, 211, 238, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.terminal-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.term-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.term-btn:hover, .term-btn.active {
+  background: rgba(34, 211, 238, 0.15);
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.terminal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.terminal-close:hover {
+  color: var(--accent-rose);
+}
+
+.terminal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #090d16;
+}
+
+.terminal-empty {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.85rem;
+  padding: 16px 0;
+}
+
+.terminal-line {
+  font-size: 0.83rem;
+  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.line-prefix {
+  font-weight: 700;
+  user-select: none;
+}
+
+.line-prefix.stdout { color: var(--accent-cyan); }
+.line-prefix.error { color: var(--accent-rose); }
+.line-prefix.sys { color: var(--accent-amber); }
+.line-prefix.warn { color: var(--accent-amber); }
+
+.terminal-line.stdout {
+  color: #f1f5f9;
+}
+
+.terminal-line.stderr {
+  color: #fecdd3;
+  background: rgba(244, 63, 94, 0.1);
+  border-left: 3px solid var(--accent-rose);
+}
+
+.terminal-line.sys {
+  color: #38bdf8;
+  font-style: italic;
+}
+
+.terminal-line.warn {
+  color: #fde047;
+  background: rgba(251, 191, 36, 0.1);
+  border-left: 3px solid var(--accent-amber);
+}
+
+.terminal-html-preview {
+  margin-top: 12px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+  padding-top: 12px;
+}
+
+.preview-label {
+  font-size: 0.75rem;
+  color: var(--accent-cyan);
+  margin-bottom: 8px;
+}
+
+.preview-iframe {
+  width: 100%;
+  height: 200px;
+  border: 1px solid var(--bg-card-border);
+  border-radius: 8px;
+  background: #ffffff;
+}
